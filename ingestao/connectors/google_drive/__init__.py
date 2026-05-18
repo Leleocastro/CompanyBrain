@@ -1,3 +1,3 @@
-# google_drive connector
+"""google_drive connector package"""
 
-__init__ for the google_drive connector package.
+__all__ = ["client"]
