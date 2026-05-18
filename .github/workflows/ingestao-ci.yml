@@ -1,0 +1,45 @@
+name: Ingestao CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ingestao/**"
+      - ".github/workflows/ingestao-ci.yml"
+  pull_request:
+    paths:
+      - "ingestao/**"
+      - ".github/workflows/ingestao-ci.yml"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: ingestao/requirements-dev.txt
+      - run: pip install -r ingestao/requirements-dev.txt
+      - run: black --check ingestao/
+      - run: flake8 ingestao/
+      - run: isort --check-only ingestao/
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: ingestao/requirements-dev.txt
+      - run: pip install -r ingestao/requirements-dev.txt
+      - name: Run tests
+        run: pytest ingestao/tests/ --cov=ingestao --cov-report=xml
+      - uses: codecov/codecov-action@v3
+        if: ${{ !cancelled() }}
+        with:
+          flags: ingestao

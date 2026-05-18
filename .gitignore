@@ -2,3 +2,13 @@ __pycache__/
 .env
 .DS_Store
 /node_modules
+*.pyc
+.coverage
+coverage/
+htmlcov/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.venv/
