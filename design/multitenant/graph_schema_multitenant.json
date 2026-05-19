@@ -6,9 +6,10 @@
   "definitions": {
     "Person": {
       "type": "object",
-      "required": ["id","name","tenant_id"],
+      "required": ["id","label","name","tenant_id"],
       "properties": {
         "id": {"type":"string"},
+        "label": {"const":"Person"},
         "tenant_id": {"type":"string"},
         "name": {"type":"string"},
         "aliases": {"type":"array","items":{"type":"string"}},
@@ -21,9 +22,10 @@
     },
     "Document": {
       "type": "object",
-      "required": ["id","title","type","tenant_id"],
+      "required": ["id","label","title","type","tenant_id"],
       "properties": {
         "id": {"type":"string"},
+        "label": {"const":"Document"},
         "tenant_id": {"type":"string"},
         "title": {"type":"string"},
         "type": {"type":"string","enum":["article","pr","issue","post"]},
@@ -36,9 +38,10 @@
     },
     "Repository": {
       "type": "object",
-      "required":["id","name","tenant_id"],
+      "required":["id","label","name","tenant_id"],
       "properties":{
         "id":{"type":"string"},
+        "label": {"const":"Repository"},
         "tenant_id": {"type":"string"},
         "name":{"type":"string"},
         "host":{"type":"string"},
@@ -50,18 +53,29 @@
     },
     "Entity": {
       "type":"object",
-      "required":["id","label","type","tenant_id"],
+      "required":["id","label","name","type","tenant_id"],
       "properties":{
         "id":{"type":"string"},
+        "label": {"const":"Entity"},
         "tenant_id": {"type":"string"},
-        "label":{"type":"string"},
+        "name":{"type":"string"},
         "type":{"type":"string","enum":["ORG","PERSON","TECH","LOCATION"]},
         "canonical_id":{"type":"string"}
       }
     }
   },
   "properties":{
-    "nodes":{"type":"array","items":{"type":"object"}},
+    "nodes":{
+      "type":"array",
+      "items":{
+        "oneOf":[
+          {"$ref":"#/definitions/Person"},
+          {"$ref":"#/definitions/Document"},
+          {"$ref":"#/definitions/Repository"},
+          {"$ref":"#/definitions/Entity"}
+        ]
+      }
+    },
     "edges":{"type":"array","items":{"type":"object"}}
   },
   "notes": "Edges MUST connect nodes of the same tenant_id. Enforce tenant isolation in application and linking pipelines."

@@ -37,7 +37,7 @@ def link():
                     if n.get('tenant_id') != e.get('tenant_id'):
                         continue
                     title = n.get('title','').lower()
-                    if e.get('label').lower() in title:
+                    if e.get('name','').lower() in title:
                         edges.append({'from': n['id'], 'to': e['id'], 'type':'MENTIONS', 'tenant_id': n.get('tenant_id'), 'confidence':0.9})
 
     # Relatedness by embedding cosine > 0.8, only within tenant

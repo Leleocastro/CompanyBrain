@@ -5,7 +5,7 @@
     {"label":"Repository","id":"repo:companybrain","tenant_id":"tenant:acme","name":"companybrain","host":"github.com","stars":120},
     {"label":"Document","id":"doc:1","tenant_id":"tenant:acme","title":"Design do grafo de conhecimento","type":"article","source_url":"https://example.com/design","created_at":"2026-05-14T12:00:00Z"},
     {"label":"Document","id":"doc:2","tenant_id":"tenant:acme","title":"Ingestão e normalização de entidades","type":"article","source_url":"https://example.com/ingest","created_at":"2026-05-14T13:00:00Z"},
-    {"label":"Entity","id":"entity:companybrain","tenant_id":"tenant:acme","label":"CompanyBrain","type":"ORG"},
+    {"label":"Entity","id":"entity:companybrain","tenant_id":"tenant:acme","name":"CompanyBrain","type":"ORG"},
     {"label":"Person","id":"person:bruno","tenant_id":"tenant:globex","name":"Bruno Silva","email":["bruno@globex.com"],"trust_score":0.6},
     {"label":"Document","id":"doc:3","tenant_id":"tenant:globex","title":"Globex internal spec","type":"article","source_url":"https://globex.example/spec","created_at":"2026-05-10T09:00:00Z"}
   ],
