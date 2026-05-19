@@ -1,0 +1,57 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ingestao/**"
+      - "indexer/**"
+      - "graph/**"
+      - "api/**"
+      - "web/**"
+      - "docker/**"
+      - "scripts/**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect changed service
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            ingestao:
+              - 'ingestao/**'
+            indexer:
+              - 'indexer/**'
+            graph:
+              - 'graph/**'
+            api:
+              - 'api/**'
+            web:
+              - 'web/**'
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy changed services to staging
+        run: |
+          for service in ingestao indexer graph api web; do
+            if [ "${{ steps.changes.outputs[service] }}" = "true" ]; then
+              bash scripts/deploy-staging.sh "$service"
+            fi
+          done
+        env:
+          GITHUB_SHA: ${{ github.sha }}
