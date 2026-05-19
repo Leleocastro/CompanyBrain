@@ -12,22 +12,28 @@ def test_list_nodes_pagination():
     r = client.get("/api/graph/nodes?page=1&size=5")
     assert r.status_code == 200
     data = r.json()
-    assert isinstance(data, list)
-    assert len(data) == 5
+    assert isinstance(data, dict)
+    assert "items" in data and "total" in data
+    assert isinstance(data["items"], list)
+    assert len(data["items"]) == 5
 
 def test_list_edges_pagination():
     r = client.get("/api/graph/edges?page=1&size=10")
     assert r.status_code == 200
     data = r.json()
-    assert isinstance(data, list)
-    assert len(data) == 10
+    assert isinstance(data, dict)
+    assert "items" in data and "total" in data
+    assert isinstance(data["items"], list)
+    assert len(data["items"]) == 10
 
 def test_search():
     # we know nodes have labels like "Person 1", search for "Person"
     r = client.get("/api/graph/search?q=Person")
     assert r.status_code == 200
     data = r.json()
-    assert all("Person" in n["label"] or n["type"] == "Person" for n in data)
+    # search now returns paginated shape
+    assert "items" in data and isinstance(data["items"], list)
+    assert all("Person" in n["label"] or n["type"] == "Person" for n in data["items"])
 
 def test_get_node_and_neighbors():
     # pick known node id n1
