@@ -1,0 +1,17 @@
+{
+  "nodes": [
+    {"label":"Person","id":"person:leo","tenant_id":"tenant:acme","name":"Leonardo Castro","email":["leo@example.com"],"trust_score":0.85},
+    {"label":"Person","id":"person:ana","tenant_id":"tenant:acme","name":"Ana Souza","email":["ana@example.com"],"trust_score":0.72},
+    {"label":"Repository","id":"repo:companybrain","tenant_id":"tenant:acme","name":"companybrain","host":"github.com","stars":120},
+    {"label":"Document","id":"doc:1","tenant_id":"tenant:acme","title":"Design do grafo de conhecimento","type":"article","source_url":"https://example.com/design","created_at":"2026-05-14T12:00:00Z"},
+    {"label":"Document","id":"doc:2","tenant_id":"tenant:acme","title":"Ingestão e normalização de entidades","type":"article","source_url":"https://example.com/ingest","created_at":"2026-05-14T13:00:00Z"},
+    {"label":"Entity","id":"entity:companybrain","tenant_id":"tenant:acme","label":"CompanyBrain","type":"ORG"},
+    {"label":"Person","id":"person:bruno","tenant_id":"tenant:globex","name":"Bruno Silva","email":["bruno@globex.com"],"trust_score":0.6},
+    {"label":"Document","id":"doc:3","tenant_id":"tenant:globex","title":"Globex internal spec","type":"article","source_url":"https://globex.example/spec","created_at":"2026-05-10T09:00:00Z"}
+  ],
+  "edges":[
+    {"from":"person:leo","to":"doc:1","type":"AUTHORED","tenant_id":"tenant:acme","role":"author","authored_at":"2026-05-14T12:00:00Z","confidence":0.95},
+    {"from":"person:ana","to":"repo:companybrain","type":"CONTRIBUTES_TO","tenant_id":"tenant:acme","role":"maintainer","commits":42},
+    {"from":"doc:1","to":"entity:companybrain","type":"MENTIONS","tenant_id":"tenant:acme","mention_text":"CompanyBrain","offsets":[100,112]}
+  ]
+}
