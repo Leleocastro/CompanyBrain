@@ -5,8 +5,7 @@ import json
 import logging
 import os
 import time
-from datetime import datetime, timezone
-from email.mime.text import MIMEText
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from ingestao.connectors.base import BaseConnector, Document
@@ -341,8 +340,6 @@ class GoogleDriveConnector(BaseConnector):
 
     @staticmethod
     def _try_decode_text(data: bytes, mime_type: str) -> str:
-        if mime_type.startswith("text/"):
-            return data.decode("utf-8", errors="replace")
         try:
             return data.decode("utf-8", errors="replace")
         except UnicodeDecodeError:

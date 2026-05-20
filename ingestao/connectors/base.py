@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 
 @dataclass
@@ -30,7 +30,11 @@ class BaseConnector(ABC):
         ...
 
     @abstractmethod
-    def list_files(self, query: Optional[str] = None) -> List[dict]:
+    def list_files(
+        self,
+        query: Optional[str] = None,
+        page_token: Optional[str] = None,
+    ) -> Tuple[List[dict], Optional[str]]:
         ...
 
     @abstractmethod
