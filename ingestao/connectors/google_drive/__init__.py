@@ -1,3 +1,5 @@
-"""google_drive connector package"""
+"""google_drive connector package."""
 
-__all__ = ["client"]
+from ingestao.connectors.google_drive.client import GoogleDriveConnector
+
+__all__ = ["GoogleDriveConnector"]
