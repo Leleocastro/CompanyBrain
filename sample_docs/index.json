@@ -1,0 +1,5 @@
+[
+  {"id": "doc-1", "title": "Introducao ao sistema", "text": "Este documento descreve a arquitetura do CompanyBrain MVP e como o pipeline de indexacao funciona."},
+  {"id": "doc-2", "title": "Guia de Embeddings", "text": "Explica provedores de embeddings e escolhas de implementacao: OpenAI, Hugging Face, local GGUF."},
+  {"id": "doc-3", "title": "Exemplo de Ingestao", "text": "Como ingerir documentos: chunking, deduplicacao, e estrategia de armazenamento."}
+]
