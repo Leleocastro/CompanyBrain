@@ -1,8 +1,11 @@
+import logging
 import time
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
 from ingestao.connectors.slack.auth import SlackAuth
+
+logger = logging.getLogger(__name__)
 
 
 class SlackClient:
@@ -26,13 +29,15 @@ class SlackClient:
                     )
                 return resp
             except SlackApiError as e:
-                if e.response.get("error") == "ratelimited":
+                error_code = e.response.get("error", "unknown")
+                if error_code == "ratelimited":
                     retry_after = int(
                         e.response.headers.get("Retry-After", 5)
                     )
                     time.sleep(retry_after)
                     last_error = e
                     continue
+                logger.error("Slack API error (attempt %d/%d): %s", attempt + 1, self._retries, error_code)
                 raise
         raise last_error or RuntimeError("max retries exceeded")
 

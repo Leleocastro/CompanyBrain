@@ -1,6 +1,6 @@
 import hashlib
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 
@@ -22,8 +22,20 @@ def _compute_sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def _merge_attachments(files: list[dict], attachments: list[dict]) -> list[dict]:
+    normalized_files = [{"type": "file", **f} for f in files] if files else []
+    seen = set()
+    merged = []
+    for item in normalized_files + attachments:
+        id_key = item.get("id") or item.get("name") or str(id(item))
+        if id_key not in seen:
+            seen.add(id_key)
+            merged.append(item)
+    return merged
+
+
 def _ts_to_datetime(ts: str) -> datetime:
-    return datetime.utcfromtimestamp(float(ts))
+    return datetime.fromtimestamp(float(ts), tz=timezone.utc)
 
 
 def normalize_message(
@@ -47,7 +59,7 @@ def normalize_message(
         sha256=_compute_sha256(text),
         channel=channel_id,
         thread_ts=thread_ts,
-        attachments=[{"type": "file", **f} for f in files] + attachments,
+        attachments=_merge_attachments(files, attachments),
         metadata={
             "raw_ts": ts,
             "has_thread": thread_ts is not None,

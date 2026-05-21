@@ -1,5 +1,6 @@
 import argparse
 import sys
+import traceback
 
 from ingestao.connectors.slack.client import SlackClient
 from ingestao.connectors.slack.channels import list_channels
@@ -8,32 +9,47 @@ from ingestao.connectors.slack.normalize import normalize_message
 
 
 def cmd_list_channels(args):
-    client = SlackClient()
-    channels = list_channels(client, limit=args.limit)
-    print(f"Found {len(channels)} public channels:")
-    for ch in channels:
-        print(f"  {ch['id']}  {ch['name']}  (members: {ch.get('num_members', '?')})")
-    return 0
+    try:
+        client = SlackClient()
+        channels = list_channels(client, limit=args.limit)
+        print(f"Found {len(channels)} public channels:")
+        for ch in channels:
+            print(f"  {ch['id']}  {ch['name']}  (members: {ch.get('num_members', '?')})")
+        return 0
+    except Exception as e:
+        print(f"Error listing channels: {e}", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
+        return 1
 
 
 def cmd_fetch_history(args):
-    client = SlackClient()
-    messages = fetch_channel_history(client, args.channel, limit=args.limit)
-    print(f"Fetched {len(messages)} messages from {args.channel}:")
-    for msg in messages:
-        doc = normalize_message(msg, args.channel)
-        print(f"  [{doc.timestamp}] {doc.author}: {doc.text_excerpt[:120]}")
-    return 0
+    try:
+        client = SlackClient()
+        messages = fetch_channel_history(client, args.channel, limit=args.limit)
+        print(f"Fetched {len(messages)} messages from {args.channel}:")
+        for msg in messages:
+            doc = normalize_message(msg, args.channel)
+            print(f"  [{doc.timestamp}] {doc.author}: {doc.text_excerpt[:120]}")
+        return 0
+    except Exception as e:
+        print(f"Error fetching history: {e}", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
+        return 1
 
 
 def cmd_fetch_thread(args):
-    client = SlackClient()
-    messages = fetch_thread(client, args.channel, args.thread_ts)
-    print(f"Fetched {len(messages)} messages in thread {args.thread_ts}:")
-    for msg in messages:
-        doc = normalize_message(msg, args.channel)
-        print(f"  [{doc.timestamp}] {doc.author}: {doc.text_excerpt[:120]}")
-    return 0
+    try:
+        client = SlackClient()
+        messages = fetch_thread(client, args.channel, args.thread_ts)
+        print(f"Fetched {len(messages)} messages in thread {args.thread_ts}:")
+        for msg in messages:
+            doc = normalize_message(msg, args.channel)
+            print(f"  [{doc.timestamp}] {doc.author}: {doc.text_excerpt[:120]}")
+        return 0
+    except Exception as e:
+        print(f"Error fetching thread: {e}", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
+        return 1
 
 
 def main():
