@@ -15,6 +15,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # --- Schemas ---
 class Node(BaseModel):
     id: str
@@ -23,11 +24,13 @@ class Node(BaseModel):
     properties: Dict[str, str]
     embedding: Optional[List[float]] = None
 
+
 class Edge(BaseModel):
     source: str
     target: str
     type: str
     weight: float
+
 
 class PaginatedNodes(BaseModel):
     items: List[Node]
@@ -35,15 +38,18 @@ class PaginatedNodes(BaseModel):
     page: int
     size: int
 
+
 class PaginatedEdges(BaseModel):
     items: List[Edge]
     total: int
     page: int
     size: int
 
+
 class NodeDetail(BaseModel):
     node: Node
     neighbors: List[Node]
+
 
 # --- In-memory seed data ---
 NODES: List[Node] = []
@@ -53,6 +59,7 @@ EDGES: List[Edge] = []
 def _rand_vec(d=128):
     return [random.random() for _ in range(d)]
 
+
 # Create ~20 nodes
 types = ["Person", "Document", "Repository", "Conversation", "Entity", "CodeFile"]
 for i in range(1, 21):
@@ -61,7 +68,10 @@ for i in range(1, 21):
         id=f"n{i}",
         label=f"{t} {i}",
         type=t,
-        properties={"title": f"{t} example {i}", "summary": f"This is an example {t} with id n{i}"},
+        properties={
+            "title": f"{t} example {i}",
+            "summary": f"This is an example {t} with id n{i}",
+        },
         embedding=_rand_vec(128),
     )
     NODES.append(node)
@@ -70,11 +80,17 @@ for i in range(1, 21):
 for i in range(1, 31):
     s = f"n{(i % 20) + 1}"
     t = f"n{((i * 3) % 20) + 1}"
-    e = Edge(source=s, target=t, type="references" if i % 3 else "mentions", weight=round(random.random(), 3))
+    e = Edge(
+        source=s,
+        target=t,
+        type="references" if i % 3 else "mentions",
+        weight=round(random.random(), 3),
+    )
     EDGES.append(e)
 
 # Helper maps
 NODE_MAP = {n.id: n for n in NODES}
+
 
 # --- Utilities ---
 def paginate_items(items: List, page: int = 1, size: int = 20):
@@ -84,10 +100,12 @@ def paginate_items(items: List, page: int = 1, size: int = 20):
     end = start + size
     return items[start:end]
 
+
 # --- Endpoints ---
 @app.get("/api/health")
 async def health():
     return {"status": "ok"}
+
 
 @app.get("/api/graph/nodes", response_model=PaginatedNodes)
 async def list_nodes(page: int = Query(1, ge=1), size: int = Query(20, ge=1, le=100)):
@@ -95,19 +113,32 @@ async def list_nodes(page: int = Query(1, ge=1), size: int = Query(20, ge=1, le=
     items = paginate_items(NODES, page, size)
     return {"items": items, "total": total, "page": page, "size": size}
 
+
 @app.get("/api/graph/edges", response_model=PaginatedEdges)
 async def list_edges(page: int = Query(1, ge=1), size: int = Query(20, ge=1, le=100)):
     total = len(EDGES)
     items = paginate_items(EDGES, page, size)
     return {"items": items, "total": total, "page": page, "size": size}
 
+
 @app.get("/api/graph/search", response_model=PaginatedNodes)
-async def search_graph(q: str = Query(..., min_length=1), page: int = Query(1, ge=1), size: int = Query(20, ge=1, le=100)):
+async def search_graph(
+    q: str = Query(..., min_length=1),
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=100),
+):
     ql = q.lower()
-    matches = [n for n in NODES if ql in n.label.lower() or ql in n.type.lower() or ql in n.properties.get("title", "").lower()]
+    matches = [
+        n
+        for n in NODES
+        if ql in n.label.lower()
+        or ql in n.type.lower()
+        or ql in n.properties.get("title", "").lower()
+    ]
     total = len(matches)
     items = paginate_items(matches, page, size)
     return {"items": items, "total": total, "page": page, "size": size}
+
 
 @app.get("/api/graph/node/{node_id}", response_model=NodeDetail)
 async def get_node(node_id: str):

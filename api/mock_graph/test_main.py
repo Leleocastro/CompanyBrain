@@ -1,12 +1,14 @@
 from fastapi.testclient import TestClient
-from api.mock_graph.main import app
+from mock_graph.main import app
 
 client = TestClient(app)
+
 
 def test_health():
     r = client.get("/api/health")
     assert r.status_code == 200
     assert r.json().get("status") == "ok"
+
 
 def test_list_nodes_pagination():
     r = client.get("/api/graph/nodes?page=1&size=5")
@@ -17,6 +19,7 @@ def test_list_nodes_pagination():
     assert isinstance(data["items"], list)
     assert len(data["items"]) == 5
 
+
 def test_list_edges_pagination():
     r = client.get("/api/graph/edges?page=1&size=10")
     assert r.status_code == 200
@@ -26,6 +29,7 @@ def test_list_edges_pagination():
     assert isinstance(data["items"], list)
     assert len(data["items"]) == 10
 
+
 def test_search():
     # we know nodes have labels like "Person 1", search for "Person"
     r = client.get("/api/graph/search?q=Person")
@@ -34,6 +38,7 @@ def test_search():
     # search now returns paginated shape
     assert "items" in data and isinstance(data["items"], list)
     assert all("Person" in n["label"] or n["type"] == "Person" for n in data["items"])
+
 
 def test_get_node_and_neighbors():
     # pick known node id n1

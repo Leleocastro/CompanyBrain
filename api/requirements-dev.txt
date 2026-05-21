@@ -1,1 +1,4 @@
 -r ../ingestao/requirements-dev.txt
+openai>=1.0.0
+fastapi>=0.109.0
+uvicorn[standard]
