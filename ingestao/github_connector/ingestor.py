@@ -31,10 +31,12 @@ class GitHubIngestor:
         self,
         auth_config: Optional[AuthConfig] = None,
         batch_size: int = 100,
+        max_concurrent_repos: int = 5,
     ) -> None:
         self.auth_config = auth_config or AuthConfig.from_env()
         self.batch_size = batch_size
         self._client: Optional[GitHubClient] = None
+        self._semaphore = asyncio.Semaphore(max_concurrent_repos)
 
     async def _ensure_client(self) -> GitHubClient:
         if self._client is None:
@@ -119,12 +121,13 @@ class GitHubIngestor:
         since: Optional[datetime] = None,
     ) -> list[IngestResult]:
         repos = await self.list_repos()
-        results = []
-        for repo in repos:
-            try:
-                result = await self.ingest_repo(repo, since=since)
-                results.append(result)
-            except Exception as e:
-                logger.error("Skipping repo %s due to error: %s", repo, e)
-                results.append(IngestResult(repo_full_name=repo, errors=[str(e)]))
-        return results
+
+        async def _ingest_one(repo: str) -> IngestResult:
+            async with self._semaphore:
+                try:
+                    return await self.ingest_repo(repo, since=since)
+                except Exception as e:
+                    logger.error("Skipping repo %s due to error: %s", repo, e)
+                    return IngestResult(repo_full_name=repo, errors=[str(e)])
+
+        return await asyncio.gather(*[_ingest_one(r) for r in repos])
