@@ -1,5 +1,5 @@
 from fastapi.testclient import TestClient
-from api.mock_graph.main import app
+from mock_graph.main import app
 
 client = TestClient(app)
 
