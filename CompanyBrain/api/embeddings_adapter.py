@@ -6,27 +6,27 @@ from openai import OpenAI
 
 
 def _sha256(text: str) -> str:
-    return hashlib.sha256(text.encode('utf-8')).hexdigest()
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 class EmbeddingsAdapter:
     def __init__(self, provider: str = None, dim: int = 768):
-        self.provider = provider or os.getenv('EMBEDDINGS_PROVIDER', 'local')
+        self.provider = provider or os.getenv("EMBEDDINGS_PROVIDER", "local")
         self.dim = dim
         self._openai_client = None
 
     def embed_text(self, text: str):
         """Return a vector for text."""
-        if self.provider == 'openai':
+        if self.provider == "openai":
             return self._openai_embed(text)
-        elif self.provider == 'hf':
+        elif self.provider == "hf":
             return self._local_embed(text)
         else:
             return self._local_embed(text)
 
     def _openai_embed(self, text: str):
         client = self._openai_client or self._build_openai_client()
-        model = os.getenv('OPENAI_MODEL', 'text-embedding-3-small')
+        model = os.getenv("OPENAI_MODEL", "text-embedding-3-small")
         kwargs = {"model": model, "input": text}
         if model in ("text-embedding-3-small", "text-embedding-3-large"):
             kwargs["dimensions"] = self.dim
@@ -34,7 +34,7 @@ class EmbeddingsAdapter:
         return resp.data[0].embedding
 
     def _build_openai_client(self):
-        api_key = os.getenv('OPENAI_API_KEY')
+        api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise ValueError(
                 "OPENAI_API_KEY environment variable not set. "
