@@ -53,24 +53,11 @@ class GoogleDriveConnector(BaseConnector):
 
     Two authentication modes:
       1. **OAuth** – each user authorizes their own Google Drive.
-         Pass an OAuth 2.0 token via ``credentials`` or set
-         ``GDRIVE_OAUTH_TOKEN`` env var (JSON-serialized
-         ``google.oauth2.credentials.Credentials``).
-
       2. **Service Account** – domain-wide delegation.
-         Set ``GDRIVE_SA_KEYFILE`` env var pointing to a JSON key file,
-         or pass ``sa_keyfile_path`` / ``sa_keyfile_dict``.
 
     When neither auth source is available the connector falls back to
     **mock mode** (driven by ``GDRIVE_TEST_MODE=mock``) so tests pass
     without real credentials.
-
-    Args:
-        credentials: An already-built ``google.oauth2.credentials.Credentials``
-            object (OAuth path).  Overrides env vars.
-        sa_keyfile_path: Path to a service-account JSON key file.
-        sa_keyfile_dict: Service-account key as a ``dict``.
-        page_size: Number of items per Drive API page (default 100).
     """
 
     def __init__(
@@ -94,18 +81,6 @@ class GoogleDriveConnector(BaseConnector):
     # ------------------------------------------------------------------
 
     def authenticate(self) -> bool:
-        """Authenticate against Google Drive.
-
-        Resolution order:
-          1. Injected ``credentials`` object (OAuth).
-          2. ``GDRIVE_OAUTH_TOKEN`` env var (OAuth).
-          3. ``sa_keyfile_path`` / ``sa_keyfile_dict`` / ``GDRIVE_SA_KEYFILE``
-             (service account).
-          4. ``GDRIVE_TEST_MODE=mock`` – no-op, returns ``True``.
-
-        Returns:
-            ``True`` if authenticated (or mock mode), ``False`` otherwise.
-        """
         if self._service is not None:
             return True
 
@@ -137,7 +112,6 @@ class GoogleDriveConnector(BaseConnector):
             return False
 
     def _resolve_credentials(self):
-        """Return a credentials object or None."""
         # 1. Injected OAuth credentials
         if self._injected_credentials is not None:
             self._auth_method = "oauth"
@@ -183,19 +157,25 @@ class GoogleDriveConnector(BaseConnector):
         self,
         query: Optional[str] = None,
         page_token: Optional[str] = None,
-    ) -> Tuple[List[DriveFile], Optional[str]]:
+    ) -> Tuple[List[dict], Optional[str]]:
         """List files matching the query.
 
-        Args:
-            query: Drive API ``q`` parameter.  When ``None``, all non-trashed
-                files the authenticated user has access to are returned.
-            page_token: Token for the next page (pagination).
-
-        Returns:
-            ``(files, next_page_token)``.
+        Returns a tuple (files_as_dicts, next_page_token) to match the
+        BaseConnector ABC signature. Each file dict is the raw Drive API item.
         """
         if self._auth_method == "mock":
-            return self._mock_list_files(query), None
+            # return list of dict-like representations for mock mode
+            items = [
+                {
+                    "id": f.id,
+                    "name": f.name,
+                    "mimeType": f.mime_type,
+                    "size": f.size,
+                    "owners": f.owners,
+                }
+                for f in self._mock_list_files(query)
+            ]
+            return items, None
 
         self._ensure_service()
 
@@ -213,29 +193,26 @@ class GoogleDriveConnector(BaseConnector):
             )
             response = self._execute_with_retry(request)
             items = response.get("files", [])
-            files = [DriveFile.from_api(item) for item in items]
-            return files, response.get("nextPageToken")
+            return items, response.get("nextPageToken")
         except Exception as exc:
             logger.error("GoogleDriveConnector: list_files failed: %s", exc)
             raise
 
     def list_all_files(self, query: Optional[str] = None) -> List[DriveFile]:
-        """Convenience: iterate all pages and return every file."""
+        """Iterate all pages and return DriveFile instances."""
         all_files: List[DriveFile] = []
         token: Optional[str] = None
         while True:
             batch, token = self.list_files(query=query, page_token=token)
-            all_files.extend(batch)
+            # batch contains raw dicts from the Drive API
+            files = [DriveFile.from_api(item) for item in batch]
+            all_files.extend(files)
             if not token:
                 break
         return all_files
 
     def download(self, file_id: str) -> bytes:
-        """Download a file's binary content by its Drive file ID.
-
-        For Google-native formats (Docs, Sheets, Slides, etc.) the method
-        exports to a standard format (PDF / plain text / CSV / PPTX).
-        """
+        """Download a file's binary content by its Drive file ID."""
         if self._auth_method == "mock":
             return self._mock_download(file_id)
 
@@ -289,7 +266,6 @@ class GoogleDriveConnector(BaseConnector):
     # ------------------------------------------------------------------
 
     def extract_metadata(self, file_info: dict) -> Document:
-        """Build a ``Document`` from a Drive API file info dict."""
         df = DriveFile.from_api(file_info)
         return drive_file_to_document(df)
 
@@ -314,11 +290,6 @@ class GoogleDriveConnector(BaseConnector):
     # ------------------------------------------------------------------
 
     def ingest(self, file_id: str) -> Optional[Document]:
-        """Download a file, extract text, normalize metadata, redact PII.
-
-        Returns a ``Document`` ready for forwarding to the indexer, or
-        ``None`` on failure.
-        """
         try:
             if self._auth_method == "mock":
                 mock_files = self._mock_list_files(None)
@@ -340,10 +311,8 @@ class GoogleDriveConnector(BaseConnector):
 
     @staticmethod
     def _try_decode_text(data: bytes, mime_type: str) -> str:
-        try:
-            return data.decode("utf-8", errors="replace")
-        except UnicodeDecodeError:
-            return ""
+        # errors="replace" avoids UnicodeDecodeError; no try/except needed
+        return data.decode("utf-8", errors="replace")
 
     # ------------------------------------------------------------------
     # Retry helper
