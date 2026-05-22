@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import List, Optional
 
+from ingestao.normalizer import safe_timestamp
+
 
 @dataclass
 class DriveFile:
@@ -23,7 +25,6 @@ class DriveFile:
 
     @classmethod
     def from_api(cls, item: dict) -> "DriveFile":
-        from ingestao.normalizer import safe_timestamp
         owners = []
         for o in item.get("owners", []):
             name = o.get("displayName") or o.get("emailAddress") or ""

@@ -43,10 +43,6 @@ def _build_drive_service(credentials):
     return build("drive", "v3", credentials=credentials, cache_discovery=False)
 
 
-def _parse_credentials_json(raw: str) -> dict:
-    return json.loads(raw)
-
-
 @register("google_drive")
 class GoogleDriveConnector(BaseConnector):
     """Google Drive connector.
@@ -123,7 +119,7 @@ class GoogleDriveConnector(BaseConnector):
             from google.oauth2.credentials import Credentials
             self._auth_method = "oauth"
             return Credentials.from_authorized_user_info(
-                _parse_credentials_json(token_json), _GDRIVE_SCOPES
+                json.loads(token_json), _GDRIVE_SCOPES
             )
 
         # 3. Service account via parameter or env

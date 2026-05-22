@@ -45,7 +45,7 @@ class TestMockMode:
         files, next_token = c.list_files()
         assert isinstance(files, list)
         assert len(files) >= 1
-        assert files[0].id == "test-file-1"
+        assert files[0]["id"] == "test-file-1"
         assert next_token is None
 
     def test_download_in_mock_mode(self, mock_mode):
