@@ -3,14 +3,16 @@ import json
 import urllib.parse
 import urllib.request
 import urllib.error
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 
 GMAIL_API_BASE = "https://gmail.googleapis.com/gmail/v1/users/me"
 
 
 class GmailClient:
-    def __init__(self, access_token: Optional[str] = None, credentials: Optional[Dict] = None):
+    def __init__(
+        self, access_token: Optional[str] = None, credentials: Optional[Dict] = None
+    ):
         self.access_token = access_token
         self.credentials = credentials or {}
 
@@ -24,7 +26,9 @@ class GmailClient:
             "Content-Type": "application/json",
         }
 
-    def list_threads(self, max_results: int = 20, page_token: Optional[str] = None) -> Dict:
+    def list_threads(
+        self, max_results: int = 20, page_token: Optional[str] = None
+    ) -> Dict:
         if self._is_mock:
             return _mock_list_threads(max_results)
         params: Dict[str, object] = {"maxResults": max_results}
@@ -36,7 +40,9 @@ class GmailClient:
     def get_thread(self, thread_id: str, format: str = "full") -> Dict:
         if self._is_mock:
             return _mock_get_thread(thread_id)
-        url = f"{GMAIL_API_BASE}/threads/{urllib.parse.quote(thread_id)}?format={format}"
+        url = (
+            f"{GMAIL_API_BASE}/threads/{urllib.parse.quote(thread_id)}?format={format}"
+        )
         return self._get(url)
 
     def get_message(self, message_id: str, format: str = "full") -> Dict:
@@ -80,11 +86,31 @@ class GmailClient:
 
 MOCK_FIXTURES = {
     "threads": [
-        {"id": "thread_001", "snippet": "Meeting tomorrow at 10am", "historyId": "12345"},
-        {"id": "thread_002", "snippet": "Invoice attached for January", "historyId": "12346"},
-        {"id": "thread_003", "snippet": "Re: Project update - Q1 results", "historyId": "12347"},
-        {"id": "thread_004", "snippet": "Welcome to CompanyBrain!", "historyId": "12348"},
-        {"id": "thread_005", "snippet": "Your subscription is expiring", "historyId": "12349"},
+        {
+            "id": "thread_001",
+            "snippet": "Meeting tomorrow at 10am",
+            "historyId": "12345",
+        },
+        {
+            "id": "thread_002",
+            "snippet": "Invoice attached for January",
+            "historyId": "12346",
+        },
+        {
+            "id": "thread_003",
+            "snippet": "Re: Project update - Q1 results",
+            "historyId": "12347",
+        },
+        {
+            "id": "thread_004",
+            "snippet": "Welcome to CompanyBrain!",
+            "historyId": "12348",
+        },
+        {
+            "id": "thread_005",
+            "snippet": "Your subscription is expiring",
+            "historyId": "12349",
+        },
     ],
 }
 

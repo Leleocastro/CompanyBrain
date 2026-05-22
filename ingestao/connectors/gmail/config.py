@@ -8,9 +8,11 @@ class GmailConfig:
     client_id: Optional[str] = None
     client_secret: Optional[str] = None
     redirect_uri: str = "http://localhost:8000/oauth2callback"
-    scopes: list = field(default_factory=lambda: [
-        "https://www.googleapis.com/auth/gmail.readonly",
-    ])
+    scopes: list = field(
+        default_factory=lambda: [
+            "https://www.googleapis.com/auth/gmail.readonly",
+        ]
+    )
     token_path: Optional[str] = None
     max_results: int = 20
 

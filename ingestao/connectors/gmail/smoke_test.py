@@ -5,6 +5,7 @@ No real credentials or network access required. Verifies that all modules
 load, the OAuth flow returns expected mock values, the client returns fixture
 data, and the parser produces canonical output.
 """
+
 import sys
 import os
 
@@ -66,7 +67,9 @@ def test_client_mock_flow():
 
     thread = client.get_thread("thread_001")
     assert thread["id"] == "thread_001"
-    print(f"[PASS] get_thread() returns thread with {len(thread['messages'])} message(s)")
+    print(
+        f"[PASS] get_thread() returns thread with {len(thread['messages'])} message(s)"
+    )
 
     msg = client.get_message("msg_002")
     assert msg["id"] == "msg_002"
@@ -106,7 +109,9 @@ def test_parser():
     assert result["source"] == "gmail"
     assert len(result["text_excerpt"]) > 0
     assert result["sha256"] is not None
-    print(f"[PASS] normalize_message() -> author={result['author']}, sha256={result['sha256'][:16]}...")
+    print(
+        f"[PASS] normalize_message() -> author={result['author']}, sha256={result['sha256'][:16]}..."
+    )
 
     thread = {
         "id": "t1",
@@ -136,6 +141,7 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"[FAIL] {t.__name__}: {e}")
             import traceback
+
             traceback.print_exc()
             failures += 1
     print("=" * 50)

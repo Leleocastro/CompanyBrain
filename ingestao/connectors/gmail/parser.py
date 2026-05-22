@@ -17,7 +17,9 @@ def normalize_message(msg: Dict[str, Any]) -> Dict[str, Any]:
         "author_raw": author_raw,
         "recipients": [
             _clean_email(r) for r in headers.get("To", "").split(",") if r.strip()
-        ] if headers.get("To") else [],
+        ]
+        if headers.get("To")
+        else [],
         "subject": headers.get("Subject"),
         "timestamp": msg.get("internalDate"),
         "date": headers.get("Date"),
@@ -38,7 +40,9 @@ def normalize_thread(thread: Dict[str, Any]) -> Dict[str, Any]:
         "messages": normalized_messages,
         "sha256": (
             hashlib.sha256(
-                json.dumps([m["id"] for m in normalized_messages], sort_keys=True).encode()
+                json.dumps(
+                    [m["id"] for m in normalized_messages], sort_keys=True
+                ).encode()
             ).hexdigest()
             if normalized_messages
             else None
@@ -60,7 +64,9 @@ def _extract_body_preview(payload: Dict[str, Any]) -> str:
         body_data = payload.get("body", {}).get("data", "")
         if body_data:
             try:
-                return base64.urlsafe_b64decode(body_data).decode("utf-8", errors="replace")
+                return base64.urlsafe_b64decode(body_data).decode(
+                    "utf-8", errors="replace"
+                )
             except Exception:
                 return ""
     for part in payload.get("parts", []):
@@ -75,12 +81,14 @@ def _extract_attachments(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
     if payload.get("filename"):
         body = payload.get("body", {})
         if body.get("attachmentId"):
-            attachments.append({
-                "filename": payload["filename"],
-                "mime_type": payload.get("mimeType"),
-                "attachment_id": body["attachmentId"],
-                "size": body.get("size", 0),
-            })
+            attachments.append(
+                {
+                    "filename": payload["filename"],
+                    "mime_type": payload.get("mimeType"),
+                    "attachment_id": body["attachmentId"],
+                    "size": body.get("size", 0),
+                }
+            )
     for part in payload.get("parts", []):
         attachments.extend(_extract_attachments(part))
     return attachments
