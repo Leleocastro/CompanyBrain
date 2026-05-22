@@ -22,5 +22,6 @@ exclude = [".git", "__pycache__", "build", "dist", ".venv", "node_modules"]
 max-complexity = 10
 
 [tool.pytest.ini_options]
-testpaths = ["ingestao/tests", "indexer/tests", "graph/tests", "api/tests"]
+testpaths = ["ingestao/tests", "ingestao/github_connector/tests", "indexer/tests", "graph/tests", "api/tests"]
+asyncio_mode = "auto"
 python_files = ["test_*.py", "*_test.py"]
