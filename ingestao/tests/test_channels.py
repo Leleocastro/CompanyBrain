@@ -1,4 +1,3 @@
-import pytest
 from ingestao.connectors.slack.channels import list_channels
 
 

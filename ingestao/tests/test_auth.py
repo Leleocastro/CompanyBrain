@@ -1,4 +1,3 @@
-import os
 import pytest
 from ingestao.connectors.slack.auth import SlackAuth
 

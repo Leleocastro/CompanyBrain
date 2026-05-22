@@ -14,7 +14,9 @@ def cmd_list_channels(args):
         channels = list_channels(client, limit=args.limit)
         print(f"Found {len(channels)} public channels:")
         for ch in channels:
-            print(f"  {ch['id']}  {ch['name']}  (members: {ch.get('num_members', '?')})")
+            print(
+                f"  {ch['id']}  {ch['name']}  (members: {ch.get('num_members', '?')})"
+            )
         return 0
     except Exception as e:
         print(f"Error listing channels: {e}", file=sys.stderr)

@@ -1,4 +1,3 @@
-import pytest
 from ingestao.connectors.slack.threads import fetch_thread, fetch_channel_history
 
 

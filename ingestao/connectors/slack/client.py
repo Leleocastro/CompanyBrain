@@ -31,13 +31,16 @@ class SlackClient:
             except SlackApiError as e:
                 error_code = e.response.get("error", "unknown")
                 if error_code == "ratelimited":
-                    retry_after = int(
-                        e.response.headers.get("Retry-After", 5)
-                    )
+                    retry_after = int(e.response.headers.get("Retry-After", 5))
                     time.sleep(retry_after)
                     last_error = e
                     continue
-                logger.error("Slack API error (attempt %d/%d): %s", attempt + 1, self._retries, error_code)
+                logger.error(
+                    "Slack API error (attempt %d/%d): %s",
+                    attempt + 1,
+                    self._retries,
+                    error_code,
+                )
                 raise
         raise last_error or RuntimeError("max retries exceeded")
 
