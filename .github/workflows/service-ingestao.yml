@@ -26,9 +26,8 @@ jobs:
           cache: pip
           cache-dependency-path: ingestao/requirements*.txt
       - run: pip install -r requirements-dev.txt
-      - run: black --check .
-      - run: isort --check-only --profile black .
-      - run: flake8 . --max-line-length=88 --per-file-ignores="github_connector/tests/*:E501"
+      - run: ruff check .
+      - run: ruff format --check .
 
   test:
     runs-on: ubuntu-latest
