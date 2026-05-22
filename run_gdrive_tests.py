@@ -39,7 +39,7 @@ try:
     c.authenticate()
     files, next_token = c.list_files()
     assert isinstance(files, list) and len(files) >= 1
-    assert files[0].id == "test-file-1"
+    assert files[0]["id"] == "test-file-1"
     assert next_token is None
     print("test_list_files_mock: OK")
 except Exception as e:
