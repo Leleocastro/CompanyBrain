@@ -2,21 +2,21 @@
 
 Retrato do que existe em `web/` e do que falta para a wiki e o chat do alvo. Escopo: só documentação; nenhuma dívida abaixo foi corrigida.
 
-**Base de leitura:** `main` em `ee718ce` (o card cita `4e37951`; `git diff 4e37951..ee718ce -- web/` está vazio, então o retrato do front vale para os dois). Fontes: o repositório CompanyBrain e `ck-contexto-do-projeto.md` (`§N`). O que não está em nenhum dos dois vai para a seção 5.
+**Base de leitura:** `main` em `84cb40e` (o card cita `4e37951`; `git diff 4e37951..84cb40e -- web/` está vazio, então o retrato do front vale para os três). Fontes: o repositório CompanyBrain e `ck-contexto-do-projeto.md` (`§N`). O que não está em nenhum dos dois vai para a seção 5.
 
 ## 1. Como o front funciona hoje
 
 ### 1.1 Stack e entrypoint
 
 - SPA React 18 + Vite 6 + TypeScript, grafo com `d3-force`, Tailwind CSS 3 em dark mode Catppuccin Mocha (`web/README.md:7-9`; `web/package.json:14-32`).
-- Sem router, sem biblioteca de estado global e sem cliente HTTP: o app é uma tela só (`web/src/App.tsx:21-53`).
+- Sem router, sem biblioteca de estado global e sem cliente HTTP: o app é uma tela só (`web/src/App.tsx:21-54`).
 - Entry point: `createRoot` em `#root`, `React.StrictMode`, CSS global com as diretivas do Tailwind (`web/src/main.tsx:6-10`; `web/src/index.css:1-3`).
 - HTML fixa `lang="en"` e `class="dark"`; o título da aba é `CompanyBrain` (`web/index.html:2-6`). A interface, porém, está escrita em português (`web/src/components/SearchBar.tsx:52`).
 
 ### 1.2 Layout e componentes
 
-- `App` monta um header com busca + título, o grafo ocupando o resto e o painel lateral fixo (`web/src/App.tsx:21-53`).
-- `GraphView` desenha um `<svg>` com `d3-force`: simulação criada em `web/src/components/GraphView.tsx:159-171` (link com distância 120 e força proporcional ao peso, carga -300, centro, colisão e `alphaDecay(0.02)`), posições aplicadas por manipulação direta do DOM no `tick` (`:85-133`) em vez de re-render do React.
+- `App` monta um header com busca + título, o grafo ocupando o resto e o painel lateral fixo (`web/src/App.tsx:21-54`).
+- `GraphView` desenha um `<svg>` com `d3-force`: simulação criada em `web/src/components/GraphView.tsx:159-171` (link com distância 120 e força proporcional ao peso, carga -300, centro, colisão e `alphaDecay(0.02)`), posições aplicadas por manipulação direta do DOM no `tick` (`:89-135`) em vez de re-render do React.
 - Interações do grafo: zoom por roda limitado a 0.1–10 (`web/src/components/GraphView.tsx:189-204`), arrastar nó e pan por Pointer Events (`:206-273`), seleção/desseleção no clique (`:182-187`, `:305-309`), destaque de vizinhos e esmaecimento do resto (`:275-283`).
 - `SearchBar` filtra localmente por `label` e `summary` (`web/src/components/SearchBar.tsx:16-22`), navega por setas/Enter/Escape (`:29-41`) e mostra autocomplete com ícone e tipo (`:70-96`). Não há debounce nem chamada de rede.
 - `SidePanel` tem largura fixa `w-80`, mostra tipo, resumo, propriedades e conexões do nó selecionado (`web/src/components/SidePanel.tsx:31`, `:48`, `:62-116`); sem nó, exibe um convite para selecionar (`:29-34`).
@@ -46,6 +46,7 @@ Divergências entre o contrato do backend e os tipos do front (registradas, não
 - **Aresta:** o backend usa `type` (`api/mock_graph/main.py:26-30`); o front usa `label` (`web/src/types.ts:11-16`) e o renderiza como rótulo (`web/src/components/GraphView.tsx:330-338`).
 - **Paginação:** o backend devolve envelope `items/total/page/size` (`api/mock_graph/main.py:32-42`); `GraphData` espera arrays planos (`web/src/types.ts:18-21`).
 - **CORS:** liberado só para `http://localhost:5173` (`api/mock_graph/main.py:11-14`), coerente com o Vite local (`web/vite.config.ts:6-9`).
+- **Documento de arquitetura:** `docs/arquitetura/arquitetura-ck.md:152` diz que o contrato `/api/graph/*` "serve hoje só para a SPA"; a SPA usa mock e não faz chamada de rede (§1.3). Divergência registrada, não resolvida.
 - **Proxy do container:** o nginx serve a SPA e manda `/api/` para `http://api:8000/` — com a barra final no `proxy_pass`, o prefixo `/api/` é removido (`docker/web.nginx.conf:7-14`), mas as rotas do backend incluem `/api` (`api/mock_graph/main.py:92`). Em produção, `/api/graph/nodes` chegaria como `/graph/nodes`.
 
 ## 2. Rodar, buildar e testar
@@ -79,7 +80,7 @@ Referências: `web/README.md:13-18`, `web/vite.config.ts:6-9`. Não há `npm tes
 
 - Componentes de função com _default export_, hooks (`useState`, `useMemo`, `useCallback`, `useRef`, `useEffect`) e props tipadas por interface local (`web/src/App.tsx:1-19`; `web/src/components/GraphView.tsx:9-16`).
 - TypeScript estrito: `strict`, `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch` (`web/tsconfig.json:15-19`), `jsx: react-jsx` e `moduleResolution: bundler` (`:9-14`).
-- Prettier: aspas simples, ponto e vírgula, `trailingComma: es5`, 2 espaços, 88 colunas (`web/.prettierrc:1-8`).
+- Prettier: aspas simples, ponto e vírgula, `trailingComma: es5`, 2 espaços, 88 colunas (`web/.prettierrc:1-7`).
 - Tailwind com `darkMode: 'class'` e paleta própria (`surface`, `border`, `text`, `accent`) em `web/tailwind.config.js:2-30`; cores também aparecem duplicadas em constantes nos componentes (`web/src/components/GraphView.tsx:35-51`; `web/src/components/SidePanel.tsx:10-26`).
 - Textos de UI em pt-BR; nomes de código e comentários em inglês/português misturados, sem padrão declarado.
 
@@ -101,7 +102,7 @@ O alvo pede build estático **por tenant**, servido em subdomínio próprio, com
 
 O que existe hoje: apenas o grafo em memória, sem páginas de documento, sem Markdown, sem busca na wiki e sem histórico. O que falta:
 
-- Rotas/URLs de wiki (a SPA atual não tem router: `web/src/App.tsx:21-53`).
+- Rotas/URLs de wiki (a SPA atual não tem router: `web/src/App.tsx:21-54`).
 - Renderização de Markdown e layout de página com metadados e citações.
 - Busca full-text + semântica (hoje a busca é `includes` local: `web/src/components/SearchBar.tsx:16-22`).
 - Histórico/versionamento e "quando mudou e por quê" (`§5:105`).
@@ -112,7 +113,7 @@ O que existe hoje: apenas o grafo em memória, sem páginas de documento, sem Ma
 
 O alvo é um motor RAG único com citações, exposto em duas superfícies: embutido na wiki (pesquisa contextual) e standalone estilo ChatGPT/OpenWebUI, com histórico por usuário e joinha/negativo em cada resposta (`§5:107-110`). A resposta deve trazer citações clicáveis (`§6:140`).
 
-O que existe hoje: nada de chat — nenhum componente, nenhuma chamada de rede, nenhum streaming (`web/src/App.tsx:21-53`; busca por "chat" em `web/src/` não retorna resultados). O que falta:
+O que existe hoje: nada de chat — nenhum componente, nenhuma chamada de rede, nenhum streaming (`web/src/App.tsx:21-54`; busca por "chat" em `web/src/` não retorna resultados). O que falta:
 
 - Componente de chat e, para a superfície standalone, uma rota/tela própria.
 - Cliente HTTP/streaming e contrato de pergunta-resposta com citações (não definido no repo nem em `§5`/`§6`).
@@ -125,7 +126,7 @@ O que existe hoje: nada de chat — nenhum componente, nenhuma chamada de rede, 
 - Camada de API no front (hoje inexistente; ver 3.2 item 1) e tratamento de erro/carregamento.
 - Sessão e tenant (`§5:78-79`); sem isso não há wiki nem histórico isolados por cliente.
 - Citações como componente reutilizável (wiki `§5:105`, chat `§5:108`, consulta `§6:140`).
-- i18n: `§9:192` exclui múltiplos idiomas do v1, mas não define qual idioma único (`§12:283`); a UI atual está em pt-BR (`web/src/components/SearchBar.tsx:52`).
+- i18n: `§9:192` exclui múltiplos idiomas do v1, mas não define qual idioma único (`§12:282`); a UI atual está em pt-BR (`web/src/components/SearchBar.tsx:52`).
 - Painel do cliente e onboarding do GitHub App (`§5:120-121`, `§6:133-134`) não são escopo deste documento, mas compartilham a mesma base de sessão/tenant.
 
 ## 5. Perguntas em aberto
@@ -134,9 +135,9 @@ O que existe hoje: nada de chat — nenhum componente, nenhuma chamada de rede, 
 2. **Como o front recebe o tenant?** `§5:104-105` fala em subdomínio por cliente e `§5:78-79` em `tenant_id` por request, mas não diz se o front resolve tenant por host, por sessão ou por ambos.
 3. **Wiki é build estático consumido direto ou há API de páginas?** `§5:102` e `§5:105` dizem build estático em S3 por tenant; o repo não tem gerador nem pipeline de build de wiki.
 4. **Como o chat é embutido na wiki?** `§5:109` diz "embutida na wiki", sem definir componente nativo, iframe ou widget; e como o chat recebe o contexto da página.
-5. **`api/mock_graph` é o contrato de referência?** `docs/produto/visao-do-produto.md:157` já questiona o entrypoint do serviço (`api.main` × `api.mock_graph.main`). A resposta muda o formato de nó/aresta/paginação a adotar (3.2 item 2).
+5. **O schema de `api/mock_graph` é o contrato de referência?** O entrypoint já foi decidido como `api.mock_graph.main:app` (`docs/arquitetura/arquitetura-ck.md:145-147`), mas o formato de nó/aresta/paginação do mock difere do front (3.2 item 2). O schema do mock permanece como referência para a API da Fase 1 ou será substituído?
 6. **Qual lado corrigir no proxy?** `docker/web.nginx.conf:11-12` remove `/api/`; o backend espera `/api/...` (`api/mock_graph/main.py:92`). Não está definido se o prefixo fica no nginx ou nas rotas.
 7. **O CI do `web` deve validar o front?** Hoje roda Python sem arquivos Python em `web/` (`.github/workflows/service-web.yml:19-50`). Trocar para `npm ci` + `npm run lint` + `npm run build` é decisão de infra/tech-lead.
 8. **Histórico de versões da wiki:** `§5:105` cita "quando mudou e por quê", mas não define modelo de versão nem UI de diff.
 9. **Feedback (joinha/negativo):** `§5:110` pede os botões, mas não define para onde vai o feedback nem se o front lê esse estado.
-10. **Documento de arquitetura da Fase 0 (`docs/arquitetura/arquitetura-ck.md`, PR #15) não está em `main`**; este documento usou o card, o contexto e `docs/produto/visao-do-produto.md`. Se o PR #15 definir pasta/contratos diferentes, este documento precisa de ajuste.
+10. **Divergência com o documento de arquitetura.** `docs/arquitetura/arquitetura-ck.md:152` afirma que o contrato `/api/graph/*` "serve hoje só para a SPA", mas a SPA não o consome (§1.3 e §1.4). Qual documento prevalece e quem corrige — o tech-lead em `arquitetura-ck.md` ou uma revisão deste documento?
