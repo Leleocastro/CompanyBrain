@@ -27,13 +27,13 @@ Um Dockerfile por serviço, todos com build em dois estágios (`docker/*.Dockerf
 
 | Serviço | Imagem / CMD | Estado |
 |---|---|---|
-| `api` | `python:3.11-slim`; `uvicorn api.main:app --host 0.0.0.0 --port 8000` (`docker/api.Dockerfile:12`) | **Quebrado.** O módulo `api.main` não existe: `api/` só tem `mock_graph/`, `README.md` e `requirements-dev.txt`. Além disso o build quebra antes: `pip install -r requirements*.txt` (`:4`) resolve para `api/requirements-dev.txt`, que só contém `-r ../ingestao/requirements-dev.txt` (`api/requirements-dev.txt:1`) — arquivo não copiado no estágio (`:3` copia apenas `api/requirements*.txt`) |
-| `graph` | `python -m graph` (`docker/graph.Dockerfile:11`) | **Quebrado.** Falta `graph/__main__.py` (`graph/` só tem `.placeholder`, `README.md`, `requirements-dev.txt`) e o `pip install` tem o mesmo problema (`graph/requirements-dev.txt:1`) |
-| `indexer` | `python -m indexer` (`docker/indexer.Dockerfile:11`) | **Quebrado.** Mesma ausência de `__main__.py` e mesmo problema de `pip` (`indexer/requirements-dev.txt:1`) |
-| `ingestao` | `python -m ingestao` (`docker/ingestao.Dockerfile:11`) | **Quebrado.** Não há `ingestao/__main__.py`; `ingestao/__init__.py` só declara `__version__`. As dependências existem (`ingestao/requirements.txt`) |
-| `web` | `node:20-alpine` → `nginx:alpine`; `npm ci` + `npm run build` (`docker/web.Dockerfile:4`, `:6`) | **Coerente.** `build` = `tsc -b && vite build` (`web/package.json:8`); `web/package-lock.json` existe. O nginx serve a SPA e faz proxy de `/api/` para `http://api:8000/` (`docker/web.nginx.conf:11-15`), então depende de um host `api` resolvível na rede |
+| `api` | `python:3.11-slim`; `uvicorn api.main:app --host 0.0.0.0 --port 8000` (`docker/api.Dockerfile:12`) | **Quebrado no build e no `CMD`.** `api/requirements*.txt` só casa com `api/requirements-dev.txt` (`:3`), que contém `-r ../ingestao/requirements-dev.txt` (`api/requirements-dev.txt:1`) — arquivo não copiado na imagem, então o `pip install` (`:4`) falha. Mesmo corrigido, `api.main` não existe: `api/` só tem `mock_graph/`, `README.md` e `requirements-dev.txt` |
+| `graph` | `python -m graph` (`docker/graph.Dockerfile:11`) | **Quebrado no build e no `CMD`.** `graph/requirements-dev.txt:1` aponta para `../ingestao/requirements-dev.txt`, ausente na imagem; e não há `graph/__main__.py` (`graph/` só tem `.placeholder`, `README.md`, `requirements-dev.txt`) |
+| `indexer` | `python -m indexer` (`docker/indexer.Dockerfile:11`) | **Quebrado no build e no `CMD`.** Mesmo `requirements-dev.txt` apontando para `../ingestao/` (`indexer/requirements-dev.txt:1`) e mesma ausência de `__main__.py` |
+| `ingestao` | `python -m ingestao` (`docker/ingestao.Dockerfile:11`) | **Quebrado no build e no `CMD`.** O `-r requirements*.txt` (`:4`) expande em `requirements-dev.txt` e `requirements.txt`, e só o primeiro é consumido pelo `-r`; o segundo vira nome de pacote (`pip`: `No matching distribution found for requirements.txt`, reproduzido). Mesmo corrigido, falta `ingestao/__main__.py` (`ingestao/__init__.py` só declara `__version__`) |
+| `web` | `node:20-alpine` → `nginx:alpine`; `npm ci` + `npm run build` (`docker/web.Dockerfile:4`, `:6`) | **Quebrado no build.** `web/package-lock.json` está dessincronizado de `web/package.json`: faltam `eslint`, `eslint-config-prettier`, `prettier` e transitivas no lock. Reproduzido: `npm ci` → `EUSAGE ... Missing: eslint@8.57.1 from lock file`. O restante é coerente: `build` = `tsc -b && vite build` (`web/package.json:8`) e o nginx serve a SPA com proxy `/api/` → `http://api:8000/` (`docker/web.nginx.conf:11-15`) |
 
-Consequência prática: **nenhuma imagem além do `web` builda**, e o `web` só funciona em runtime se houver um `api` na mesma rede — que hoje não builda.
+Consequência prática: **nenhuma das cinco imagens builda hoje** — `api`, `graph`, `indexer` e `ingestao` falham no `pip install`; `web` falha no `npm ci`. Mesmo que buildassem, só o `web` tem entrypoint válido.
 
 ### 1.3 CI (GitHub Actions, `.github/workflows/`)
 
@@ -75,7 +75,7 @@ Bug adicional na seleção: `${{ steps.changes.outputs[service] }}` (`deploy-sta
 |---|---|---|
 | Python (imagens) | 3.11 | `docker/api.Dockerfile:1`, `:6` (idem `graph`, `indexer`, `ingestao`) |
 | Python (CI) | matriz 3.10 / 3.11 / 3.12 | `.github/workflows/service-*.yml:37` |
-| Raiz | `pytest>=7.0`, `google-api-python-client>=2.80`, `google-auth>=2.17`, `google-auth-oauthlib>=1.0`, `google-auth-httplib2>=0.1` | `requirements.txt:1-7` |
+| Raiz | `pytest>=7.0`, `google-api-python-client>=2.80`, `google-auth>=2.17`, `google-auth-oauthlib>=1.0`, `google-auth-httplib2>=0.1` | `requirements.txt:1-8` |
 | `ingestao` runtime | `slack_sdk>=3.27,<4`, `pytest>=8.0`, `pytest-mock>=3.14` | `ingestao/requirements.txt:1-3` |
 | `ingestao` dev/CI | `black==24.2.0`, `flake8==7.0.0`, `isort==5.13.2`, `pre-commit==3.6.0`, `pytest==8.0.0`, `pytest-asyncio==0.25.0`, `pytest-httpx==0.35.0`, `pytest-cov>=5`, `httpx==0.28.1`, `PyJWT==2.10.1`, `ruff>=0.15.0` | `ingestao/requirements-dev.txt:1-13` |
 | Conector GitHub | `httpx>=0.28.0`, `PyJWT>=2.10.0` | `ingestao/github_connector/requirements.txt:1-2` |
@@ -93,12 +93,12 @@ Observações:
 
 | Peça | Classificação | Evidência |
 |---|---|---|
-| SPA `web` | Real (mock de dados) | `web/src/App.tsx`, `web/package.json`; dados em `web/README.md:29` |
+| SPA `web` | Código real, imagem não builda (lock dessincronizado) | `web/src/App.tsx`, `web/package.json`; `docker/web.Dockerfile:4`; dados em `web/README.md:29` |
 | `api/mock_graph` | Real, mas não é a API do produto | `api/mock_graph/main.py:7-127`; 5 testes passando |
 | Conectores (GitHub, Slack, Drive, Gmail) | Real como biblioteca; sem serviço | `ingestao/connectors/`, `ingestao/github_connector/` |
 | `WebhookHandler` (HMAC) | Real, mas não montado em app nenhum | `ingestao/github_connector/webhooks.py:12`, `:24` |
 | `graph`, `indexer` | Placeholder | `graph/README.md`, `indexer/README.md`, `.placeholder` |
-| Dockerfiles `api`/`graph`/`indexer`/`ingestao` | Placeholder (não buildam/rodam) | §1.2 |
+| Dockerfiles `api`/`ingestao`/`graph`/`indexer` | Placeholder (não buildam/rodam) | §1.2 |
 | `scripts/deploy-*.sh` | Placeholder (rollout via `echo`) | `scripts/deploy-staging.sh:22` |
 | `deploy-staging.yml` / `deploy-prod.yml` | Placeholder (sem cluster/secret; seleção inválida) | §1.4 |
 | CI de `api`/`graph`/`indexer`/`web` | Placeholder (não valida o serviço) | §1.3 |
@@ -116,7 +116,7 @@ O contexto trata hospedagem e ambientes como **não definidos** (`§12.10`) e o 
 | Manifestos | Nenhum | Deployment/Service/Ingress (ou compose) por serviço, com healthcheck e réplicas | §1.4 |
 | Rollout real | `echo \| kubectl apply \|\| true` | `kubectl set image`/`rollout status` (ou equivalente) com falha visível | `scripts/deploy-staging.sh:22` |
 | Credenciais de deploy | Só `GITHUB_TOKEN` para o GHCR | `KUBECONFIG`/credencial do cluster como secret; proteção do environment `staging` | `deploy-staging.yml:18-23` |
-| Imagens buildáveis | Só `web` builda | Corrigir entrypoints e `pip install` de `api`, `ingestao`, `graph`, `indexer` | §1.2 |
+| Imagens buildáveis | Nenhuma das cinco builda | Regenerar `web/package-lock.json` e corrigir `pip install` e entrypoints de `api`, `ingestao`, `graph`, `indexer` | `docker/web.Dockerfile:4`, `docker/*.Dockerfile:4` |
 | Serviços de dados | Nada | Postgres, Redis, Qdrant e S3 disponíveis no ambiente | `§5` Armazenamento |
 | Configuração | Nada | Env vars/segredos por ambiente (GitHub, LLM, Stripe no futuro) | `§5` Backend, `§5` Billing |
 | Observabilidade | Nada | Logs estruturados com `tenant_id`, métricas por etapa e alertas | `§5` Observabilidade |
@@ -135,14 +135,13 @@ O que já existe é só a autenticação de cliente: `AuthType.GITHUB_APP`, JWT 
 |---|---|---|---|
 | Registro do App | Nada | Definir dono (conta/organização), permissões, eventos e publicação | `§12.3` |
 | Instalação em 1 clique | Nada | Fluxo de instalação OAuth e escolha de repositórios | `§5` Ingestão, `§2` |
-| Callback | Nada | Endpoint que recebe o `installation_id` e o vincula ao tenant | `§5` Ingestão, `§7` |
-| Secret do webhook | Nada | Secret por App, guardado como segredo de ambiente | `§5` Ingestão |
-| Endpoint de webhook | `WebhookHandler` verifica HMAC e trata `push`/`pull_request`/`issues`, mas não está montado em app algum | Rota pública HTTPS (`/webhooks/github`) chamando o handler | `ingestao/github_connector/webhooks.py:12`, `:24`, `:51`, `:69`, `:84` |
+| Callback | Nada | Endpoint que recebe o `installation_id` e o vincula ao tenant | Fluxo OAuth de `§2`; rota e vínculo não definidos — §6 |
+| Secret do webhook | Nada | Secret por App, guardado como segredo de ambiente | `§10` (webhooks assinados com secret e HMAC); hoje só `ingestao/github_connector/webhooks.py:13` |
+| Endpoint de webhook | `WebhookHandler` verifica HMAC e trata `push`/`pull_request`/`issues`, mas não está montado em app algum | Rota que receba o evento e chame o handler | `§5` Ingestão (webhooks de PRs); `ingestao/github_connector/webhooks.py:12`, `:24`, `:51`, `:69`, `:84` |
 | Vínculo por tenant | Nada | Guardar instalação/repos por `tenant_id` com isolamento | `§7` |
-| Endpoint público | Nada | API exposta em HTTPS, com URL estável para o GitHub | §4 |
 | Backfill ao instalar | `GitHubIngestor` importa por `since` via CLI | Disparo na instalação, em background, com teto e filtros por plano | `ingestao/github_connector/ingestor.py:57`, `:119`; `§6` |
 
-Dependência de sequência: o GitHub App não fecha antes de existir API com auth e `tenant_id` (`§9` Fase 1) e um endpoint público — o que depende de §4.
+Dependência de sequência: o GitHub App não fecha antes de existir API com auth e `tenant_id` (`§9` Fase 1) e de uma URL pública (§4, "Acesso e DNS").
 
 ---
 
@@ -155,3 +154,5 @@ Dependência de sequência: o GitHub App não fecha antes de existir API com aut
 5. **Registry e nomes de imagem:** `ghcr.io/leleocastro/companybrain` é fixo nos scripts (`scripts/deploy-staging.sh:6`). É o registry definitivo, e a conta `leleocastro` é a dona? Impacto: credenciais e permissões de push.
 6. **URL pública e domínio da API** (para o webhook do GitHub App) — depende de `§12.8`/`§12.10`, não definidos.
 7. **Segredos de terceiros** (GitHub App, LLM, Stripe): quem provisiona e em qual cofre? Nada no repositório além de `GITHUB_*` lidos por env (`ingestao/github_connector/auth.py:40-62`).
+
+8. **Fluxo de instalação e callback do GitHub App** (rota, parâmetro de retorno, vínculo `installation_id` ↔ tenant). Não está definido em `§2` nem em `§5`; depende de `§12.3`. Impacto: §5.
