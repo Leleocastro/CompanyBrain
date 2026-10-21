@@ -38,10 +38,11 @@ Checklist do reviewer para PRs do CompanyBrain. Cada item cita a origem: `caminh
 ### Segurança, isolamento e segredos
 
 - [ ] Todo dado lido/gravado carrega `tenant_id`; nenhuma query, coleção ou path cruza tenant (`§7`; alvo em `§5` Backend/Armazenamento).
-- [ ] Logs novos incluem `tenant_id` e não logam conteúdo de documento, e-mail ou token (`§5` Observabilidade).
+- [ ] Logs novos incluem `tenant_id` (`§5` Observabilidade, `ck-contexto-do-projeto.md:127`) e não logam conteúdo de documento, e-mail ou token (`§7`, `ck-contexto-do-projeto.md:150-158`).
 - [ ] Nenhum segredo no diff: token, senha, chave privada, `.env` (`R14`; `.gitignore` cobre `.env`; pre-commit tem `detect-private-key` em `.pre-commit-config.yaml:11`).
 - [ ] Segredos vêm de ambiente, como o conector GitHub já faz (`ingestao/github_connector/auth.py:40-61`), e credencial não aparece em `repr` (`auth.py:31`).
-- [ ] Input de webhook é verificado por HMAC antes de processar (`ingestao/github_connector/webhooks.py`); PII passa por `redact_pii` quando o dado sai da ingestão (`ingestao/pii.py:14`).
+- [ ] Input de webhook é verificado por HMAC antes de processar (`ingestao/github_connector/webhooks.py`).
+- [ ] PII é redigida antes de sair da ingestão (`§7`; `ingestao/pii.py:14`). Hoje só o normalizador do Google Drive chama `redact_pii` (`ingestao/connectors/google_drive/normalizer.py:23`): em PR que tocar Gmail, Slack ou outro conector, o item é exigência a cobrar, não comportamento existente.
 - [ ] Exclusão/exportação de workspace e retenção seguem `§7` quando o PR tocar dados persistidos.
 
 ## 3. Documentação
@@ -73,3 +74,4 @@ Checklist do reviewer para PRs do CompanyBrain. Cada item cita a origem: `caminh
 - `docs/skills/` ainda não existe em `main`; a decisão da pasta está em `docs/arquitetura/arquitetura-ck.md` §5.1 (PR #15, aberto). Se o PR #15 mudar, esta skill muda de lugar.
 - `.github/workflows/service-web.yml` roda `ruff`/`pytest` em `web/`, que é Node e não tem `requirements-dev.txt` — o CI do frontend não valida o frontend. Divergência registrada, não corrigida aqui (card `docs`).
 - `docs/` não está nos `paths` de nenhum workflow de serviço; não há CI de Markdown além do prettier do pre-commit. Confirmar se isso basta.
+- Redação de PII só existe no conector Google Drive (`ingestao/connectors/google_drive/normalizer.py:23`); Slack (`ingestao/connectors/slack/normalize.py`) e Gmail (`ingestao/connectors/gmail/`) não chamam `redact_pii`. É lacuna contra `§7` — vira card de backend, não item já cumprido.
