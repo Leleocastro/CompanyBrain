@@ -4,7 +4,14 @@ Skill do qa. Diz o que já dá para testar hoje, como rodar, os cenários alvo d
 
 ## 1. O que dá para testar hoje
 
-Tudo local e em mock, sem credencial real. Antes: `python -m pip install -r requirements.txt -r ingestao/requirements-dev.txt` (`requirements.txt:1`, `ingestao/requirements-dev.txt:1`).
+Tudo local e em mock, sem credencial real. Num venv limpo:
+
+```
+python -m pip install -r requirements.txt -r api/mock_graph/requirements.txt \
+  "pytest>=8.2" pytest-asyncio pytest-httpx pytest-mock slack_sdk PyJWT
+```
+
+Não usar `-r ingestao/requirements-dev.txt`: os pins dele não resolvem entre si (ver 4).
 
 | Suíte | Cobre | Como rodar | Observação |
 |---|---|---|---|
@@ -16,7 +23,7 @@ Tudo local e em mock, sem credencial real. Antes: `python -m pip install -r requ
 | Gmail smoke (5) | imports, config, OAuth mock, parser (`ingestao/connectors/gmail/smoke_test.py:126`) | `python ingestao/connectors/gmail/smoke_test.py` | self-contained |
 | Mock Graph API (5) | health, paginação, busca, nó+vizinhos (`api/mock_graph/test_main.py:6`) | `python -m pytest api/mock_graph/test_main.py -v` (da raiz) | — |
 
-Verificado em 2026-10-21: 24 + 14 + 45 + 29 + 5 = 117 testes e o runner do Drive passaram localmente em mock (Python 3.14, venv com as deps acima).
+Verificado em 2026-10-21 com o comando acima (Python 3.14, pytest 9.1.1): 24 + 14 + 45 + 29 + 5 = 117 testes verdes, mais `run_gdrive_tests.py` e o `smoke_test.py` do Gmail (5/5).
 
 Evidência: saída do `pytest` (pass/fail) anexada ao card ou link do run de CI. Hoje **não há código** para `tenant_id`, auth de API key/sessão, pipeline de PR, wiki, chat ou Stripe (`§5`; `grep -rn tenant` em `*.py`/`*.ts`/`*.tsx` = 0 ocorrências).
 
@@ -35,7 +42,7 @@ Formato: Dado / Quando / Então, origem e evidência esperada. "Hoje" indica se 
 - Dado sessão de usuário de A, quando abre wiki/painel de B, então nega acesso e registra tentativa.
 - Evidência: status HTTP + corpo + log de auditoria (hash da key, tenant, rota). Hoje: não.
 
-**2.3 GitHub App e backfill** (`§5` Ingestão, `§6` 4.1, `§8`)
+**2.3 GitHub App e backfill** (`§5` Ingestão, `§6` cadastro/onboarding, `§8` tabela de planos)
 - Dado payload com `X-Hub-Signature-256` válido, quando chega o webhook, então aceita e enfileira; inválido, então rejeita (base testada: `ingestao/github_connector/webhooks.py:24`, `test_webhooks.py:8`).
 - Dado instalação com PRs fora da janela do plano (Essencial 3 meses, Profissional 12) e PRs de bot/merge/minúsculo, quando o backfill roda, então processa só a janela e registra o motivo do descarte.
 - Evidência: log de entrega do webhook + contagem de PRs processados vs. ignorados por motivo. Hoje: só o webhook isolado.
@@ -70,6 +77,7 @@ Formato: Dado / Quando / Então, origem e evidência esperada. "Hoje" indica se 
 
 ## 4. Divergências observadas (não corrigidas aqui)
 
+- `ingestao/requirements-dev.txt:5` (`pytest==8.0.0`) e `:6` (`pytest-asyncio==0.25.0`, que exige `pytest>=8.2`) não resolvem juntos: `pip install -r ingestao/requirements-dev.txt` termina em `ResolutionImpossible`. Isso atinge os jobs `lint`/`test` de `.github/workflows/service-ingestao.yml:28,45` e, por tabela, `api/requirements-dev.txt:1` (`service-api.yml:28,45`).
 - `.github/workflows/service-web.yml:27` fixa `cache-dependency-path: web/requirements*.txt` e `:28` instala `web/requirements-dev.txt`, mas `web/` é React/Vite e não tem esses arquivos.
 - O `testpaths` (`pyproject.toml:25`) aponta para `indexer/tests`, `graph/tests` e `api/tests`, que não existem; os testes de `ingestao` e `api` vivem fora desses caminhos.
 - `pyproject.toml:25` não inclui `ingestao/connectors/gmail/tests` quando o pytest é disparado da raiz.
