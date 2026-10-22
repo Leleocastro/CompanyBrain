@@ -22,9 +22,9 @@ Skill do po. Cobre os dois procedimentos que se repetem: escrever um card com cr
 | Campo | O que escrever |
 |---|---|
 | `Objetivo:` | Uma frase: o que muda e por quê. Sem solução técnica. |
-| `História:` | Como <papel>, quero <x>, para <y> (`visao-do-produto.md:136`). |
+| `História:` | Como <papel>, quero <x>, para <y> (formato das instruções do projeto no Multica). |
 | `Critérios de aceite:` | Dado/Quando/Então, um por comportamento (§2.3). |
-| `Fase/Prioridade:` | Fase 0–3 (`§9`; `visao-do-produto.md:100-105`) e prioridade `urgent`/`high`/`medium`/`low`, com o motivo. |
+| `Fase/Prioridade:` | Fase 0 na fase de entendimento e 1–3 em `§9` (`ck-contexto-do-projeto.md:177-192`); prioridade `urgent`/`high`/`medium`/`low`, com o motivo (instruções do projeto no Multica). |
 | `Contexto:` | Seções `§N` e partes do repositório que o dev precisa ler. |
 | `Premissas:` | Decisões pequenas e reversíveis, cada uma com o motivo. |
 | `Bug:` | Só em card de defeito: passos, esperado vs. obtido, evidência, severidade, link do card original. |
@@ -43,7 +43,7 @@ Deixe vazios `Abordagem técnica:` (tech-lead), `Dev:` e `PR:` (executor). Não 
 ### 2.4 Labels e prioridade
 
 - Área: `backend`, `frontend`, `infra`, `docs`, `bug`.
-- Fase: `fase-0`, `fase-1`, `fase-2`, `fase-3` (`§9`; `visao-do-produto.md:100-105`).
+- Fase: `fase-0`, `fase-1`, `fase-2`, `fase-3` (instruções do projeto no Multica; fases de produto em `§9`, `ck-contexto-do-projeto.md:177-192`).
 - `retorno-1`/`retorno-2` só no handoff de devolução; o limite é 2 devoluções por card (`docs/skills/checklist-revisao.md:62`).
 
 ### 2.5 Quando mandar para `needs_spec` ou `refinement`
@@ -68,8 +68,8 @@ Deixe vazios `Abordagem técnica:` (tech-lead), `Dev:` e `PR:` (executor). Não 
 ### 3.2 Aceitar ou devolver
 
 - Aceito: `multica issue status <KEY> done --no-start`. Não reatribuo e não comento.
-- Defeito técnico (não atende ao critério): label `retorno-N`, `refinement` + tech-lead; conta como devolução (`docs/skills/checklist-revisao.md:62`).
-- Critério ambíguo que é meu: completo o card e devolvo a `refinement` + tech-lead.
+- Defeito técnico (não atende ao critério): label `retorno-1` (ou `retorno-2`), status `in_progress` e atribuição ao `Dev:` do card (ou ao autor do PR, se `Dev:` estiver vazio). Só na 3ª devolução, `refinement` + tech-lead (`docs/skills/checklist-revisao.md:61-62`).
+- Critério ambíguo que é meu: completo o critério no corpo; se o entregue já o atende, aceito; se não, devolvo a quem executa com `retorno-N` + `in_progress`.
 - Discussão de código fica no PR, nunca no card (`visao-do-produto.md:139`).
 
 ### 3.3 Fim da Fase 0
