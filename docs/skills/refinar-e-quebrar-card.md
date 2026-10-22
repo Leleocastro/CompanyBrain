@@ -28,7 +28,7 @@ Três blocos curtos, cada linha com origem.
 **Definição de pronto**
 - Código: teste que falha antes e passa depois, mais lint/format (`pyproject.toml:1-27`; `.pre-commit-config.yaml:2-39`).
 - CI: o workflow do serviço tocado passa (`.github/workflows/service-*.yml`).
-- Isolamento: todo dado lido/gravado carrega `tenant_id` e o log o inclui (`ck-contexto-do-projeto.md:150`).
+- Isolamento: todo dado lido/gravado carrega `tenant_id` (§7, `ck-contexto-do-projeto.md:150`); o log também (`§5` Observabilidade, `ck-contexto-do-projeto.md:127`).
 - Doc: origem `caminho:linha`/`§N` e lacunas em "Perguntas em aberto" (`R16`; `ck-contexto-do-projeto.md:7-18`).
 - Não há critério de pronto por fase no material (`ck-contexto-do-projeto.md:273`): a definição de pronto do card é o substituto até o po definir.
 
@@ -37,11 +37,11 @@ Três blocos curtos, cada linha com origem.
 | Entrega do PR | Label | `Dev:` |
 |---|---|---|
 | API, ingestão, pipeline, banco, auth | backend | dev-backend |
-| `web/` (React/Vite): wiki, chat, painel | frontend | dev-frontend |
+| `web/` (React 18 + Vite, `docs/arquitetura/arquitetura-ck.md:32`): wiki, chat, painel | frontend | dev-frontend |
 | Docker, CI, deploy, ambientes | infra | devops |
 | Documento ou skill em `docs/` | docs | quem escreve (tech-lead, reviewer ou qa) |
 
-- Uma label por card; se pede duas áreas, tem duas responsabilidades — quebre (§4).
+- Uma label por card (convenção de fluxo, como `R1–R16`); se pede duas áreas, tem duas responsabilidades — quebre (§4).
 - `docs/` na raiz, uma pasta por tipo (`docs/arquitetura/arquitetura-ck.md:122`); código por serviço (`README.md:3-8`).
 - Só atribua quando `Abordagem técnica:`, label e `Dev:` estiverem preenchidos; depois `todo` + o agente do `Dev:` (`R2`, `R13`).
 
@@ -50,7 +50,7 @@ Três blocos curtos, cada linha com origem.
 - Quebre quando o card tem mais de uma responsabilidade ou o PR passaria de ~200 linhas (`R9`).
 - Um card por entrega verificável; cards planos, sem `--parent`, ligados por label e projeto (`R12`).
 - Cada card novo repete Objetivo, Critérios de aceite e Contexto, já com `Abordagem técnica:`; ajuste ou cancele o original.
-- Quebre pela fronteira do serviço — `ingestao`, `api`, `web` e `docker/` (`docs/arquitetura/arquitetura-ck.md:26`) —, não por etapa de execução.
+- Quebre pela fronteira do serviço — `ingestao`, `api`, `web` (`docs/arquitetura/arquitetura-ck.md:26`) e os Dockerfiles por serviço em `docker/` (`docs/arquitetura/arquitetura-ck.md:51`) —, não por etapa de execução.
 - Se a quebra revelar dependência entre os novos cards, diga a ordem no `Contexto:` de cada um.
 
 ## 5. Quando mandar para `needs_spec`
@@ -62,14 +62,14 @@ Três blocos curtos, cada linha com origem.
 
 ## 6. Devolução excedida (R7)
 
-- Devolução do reviewer/qa chega com `retorno-1` ou `retorno-2`; até duas, o card volta ao dev (`R6`).
+- Devolução do reviewer/qa chega com `retorno-1` ou `retorno-2`; até duas, o card volta ao dev (`R7`; o feedback fica no PR, `R6`).
 - Na terceira, o card vem para `refinement` e decide-se uma vez: reescrever o card, quebrar (§4) ou escalar ao humano (`R5`, `R7`).
 - Não devolva de novo ao mesmo dev sem mudar algo no card: reescrita ou quebra precisam aparecer em `Abordagem técnica:` e nos critérios de aceite.
 
 ## Perguntas em aberto
 
 - `R1–R16` não existem no repositório: ficam nas instruções do agente no Multica. Esta skill cita o número da regra, como `docs/skills/checklist-revisao.md` já faz; não há `caminho:linha` para elas.
-- O card do tech-lead cita `AGENTS.md do projeto`; não há `AGENTS.md` no `main` do CompanyBrain (`README.md:1-8`). Onde essas regras são versionadas?
+- O card do tech-lead cita `AGENTS.md do projeto`; não há `AGENTS.md` no `main` (`git ls-tree -r origin/main --name-only` não retorna esse arquivo). Onde essas regras são versionadas?
 - Não há rótulo de "pronto" por fase (`ck-contexto-do-projeto.md:273`); a definição de pronto por card é proxy até o po definir.
 - `§5` não lista endpoints nem o contrato da API alvo (`ck-contexto-do-projeto.md:75`); o único contrato verificável hoje é o mock (`api/mock_graph/main.py:19-47`). Divergência registrada, não resolvida aqui.
 - A tabela de labels não tem agente para `docs`; o `Dev:` de card `docs` fica com quem escreve. Confirmar se o po quer um `Dev:` fixo.
